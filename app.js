@@ -1,5 +1,5 @@
-/* ============ SnipSnap · app.js ============ */
-/* Flow: pick image → preview → "Remove Background" → progress → result → download */
+/* ============ SnipSnap · app.js (v2) ============ */
+/* Flow: pick image → preview → "Remove background" → progress → result → download */
 
 const $ = (id) => document.getElementById(id);
 
@@ -16,11 +16,15 @@ const previewOriginal = $("preview-original");
 const beforeImg = $("before-img");
 const afterImg = $("after-img");
 const fileNameEl = $("file-name");
+const removeBtn = $("remove-btn");
+const changeBtn = $("change-btn");
 const statusText = $("status-text");
 const progressFill = $("progress-fill");
 const progressPct = $("progress-pct");
 const progressBar = document.querySelector(".progress");
 const toast = $("toast");
+
+const DEFAULT_FILE_LABEL = "Untitled image";
 
 let originalFile = null;
 let resultBlob = null;
@@ -33,7 +37,7 @@ function show(name) {
 }
 
 /* ---------- toast ---------- */
-function showToast(message, ms = 3500) {
+function showToast(message, ms = 4000) {
   toast.textContent = message;
   toast.hidden = false;
   clearTimeout(toastTimer);
@@ -59,7 +63,7 @@ function handleFile(file) {
   if (!file) return;
 
   if (!file.type.startsWith("image/")) {
-    showToast("That doesn't look like an image 🤔 — try PNG, JPG or WebP");
+    showToast("Unsupported file type — please use PNG, JPG or WebP.");
     return;
   }
 
@@ -73,6 +77,8 @@ function handleFile(file) {
   fileNameEl.textContent = file.name;
   dropzone.hidden = true;
   previewBox.hidden = false;
+  removeBtn.hidden = false;
+  changeBtn.hidden = false;
   show("upload");
 }
 
@@ -116,8 +122,8 @@ function resetProgress() {
 function updateProgress(key, current, total) {
   const pct = total ? Math.round((current / total) * 100) : 0;
   statusText.textContent = key.startsWith("fetch")
-    ? "Downloading AI model (first run only)…"
-    : "Removing background…";
+    ? "Downloading AI model (first run only)"
+    : "Removing background";
   progressFill.style.width = pct + "%";
   progressPct.textContent = pct + "%";
   progressBar.setAttribute("aria-valuenow", String(pct));
@@ -140,12 +146,12 @@ async function processImage() {
   } catch (err) {
     console.error(err);
     show("upload");
-    showToast("Something went wrong: " + (err?.message || err), 6000);
+    showToast("Something went wrong: " + (err?.message || err));
   }
 }
 
-$("remove-btn").addEventListener("click", processImage);
-$("change-btn").addEventListener("click", () => fileInput.click());
+removeBtn.addEventListener("click", processImage);
+changeBtn.addEventListener("click", () => fileInput.click());
 
 /* ---------- result ---------- */
 function downloadResult() {
@@ -171,6 +177,9 @@ function reset() {
   fileInput.value = "";
   previewBox.hidden = true;
   dropzone.hidden = false;
+  removeBtn.hidden = true;
+  changeBtn.hidden = true;
+  fileNameEl.textContent = DEFAULT_FILE_LABEL;
   show("upload");
 }
 
